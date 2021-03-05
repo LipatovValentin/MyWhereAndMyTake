@@ -57,9 +57,11 @@ namespace MyWhereAndMyTake
                     if (function(item) == true)
                     {
                         collection = collection.MyAdd(item);
+                        // yield return item;
                     }
                 }
                 return (IEnumerable<T>)collection;
+                // yield break;
             }
         }
         public static IEnumerable<T> MyTake<T>(this IEnumerable<T> collectionIEnumerable, int length)
@@ -79,6 +81,7 @@ namespace MyWhereAndMyTake
                     if (counter < length)
                     {
                         collection = collection.MyAdd(item);
+                        // yield return item;
                         counter = counter + 1;
                     }
                     else
@@ -87,6 +90,7 @@ namespace MyWhereAndMyTake
                     }
                 }
                 return (IEnumerable<T>)collection;
+                // yield break;
             }
         }
         public static int MyLength<T>(this IEnumerable<T> collectionIEnumerable)
