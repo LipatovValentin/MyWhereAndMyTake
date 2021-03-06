@@ -61,7 +61,6 @@ namespace MyWhereAndMyTake
                     }
                 }
                 return (IEnumerable<T>)collection;
-                // yield break;
             }
         }
         public static IEnumerable<T> MyTake<T>(this IEnumerable<T> collectionIEnumerable, int length)
@@ -90,7 +89,6 @@ namespace MyWhereAndMyTake
                     }
                 }
                 return (IEnumerable<T>)collection;
-                // yield break;
             }
         }
         public static int MyLength<T>(this IEnumerable<T> collectionIEnumerable)
