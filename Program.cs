@@ -114,7 +114,7 @@ namespace MyWhereAndMyTake
                 }
                 else
                 {
-                    continue;
+                    break;
                 }
             }
             return false;
