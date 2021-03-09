@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,26 +9,10 @@ namespace MyWhereAndMyTake
     {
         static void Main(string[] args)
         {
-            /*
-            foreach (var item in GetEnumiration().Where(x => x % 2 == 0).Take(5))
+            foreach (var item in GetEnumiration().MyWhere(x => x % 2 == 0).Take(5))
             {
                 Console.WriteLine(item);
             }
-            */
-
-            /*
-            foreach (var item in GetEnumiration().MyTake(5).MyWhere(x => x % 2 == 0))
-            {
-                Console.WriteLine(item);
-            }
-            */
-
-            var array = Enumerable.Range(0, 25);
-            foreach (var item in array.MyWhere(x => x % 2 == 0).MyTake(5))
-            {
-                Console.WriteLine(item);
-            }
-
             Console.ReadKey();
         }
         public static IEnumerable<int> GetEnumiration()
@@ -39,96 +24,111 @@ namespace MyWhereAndMyTake
             }
         }
     }
+
+    public class MyHelper<T> : IEnumerable<T>, IEnumerator<T>, IDisposable
+    {
+        protected IEnumerator<T> _items;
+        public T Current
+        {
+            get
+            {
+                return this._items.Current;
+            }
+        }
+        object IEnumerator.Current
+        {
+            get
+            {
+                return (object) this.Current;
+            }
+        }
+        public MyHelper(IEnumerable<T> items)
+        {
+            this._items = items.GetEnumerator();
+        }
+        public virtual bool MoveNext()
+        {
+            return this._items.MoveNext();
+        }
+        public void Reset()
+        {
+            this._items.Reset();
+        }
+        public void Dispose()
+        {
+            this._items.Dispose();
+        }
+        public MyHelper<T> GetEnumerator()
+        {
+            return this;
+        }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return this;
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this;
+        }
+    }
+
+    public class MyWhenHelper<T> : MyHelper<T>
+    {
+        private Func<T, bool> _predicate;
+        public MyWhenHelper(IEnumerable<T> items, Func<T, bool> predicate) : base (items)
+        {
+            this._predicate = predicate;
+        }
+        public override bool MoveNext()
+        {
+            while (this._items.MoveNext())
+            {
+                if (this._predicate(this.Current) == true)
+                {
+                    return true;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            return false;
+        }
+    }
+    public class MyTakeHelper<T> : MyHelper<T>
+    {
+        private int _counter;
+        private int _length;
+        public MyTakeHelper(IEnumerable<T> items, int length) : base(items)
+        {
+            this._length = length;
+        }
+        public override bool MoveNext()
+        {
+            while (this._items.MoveNext())
+            {
+                if (this._counter < this._length)
+                {
+                    this._counter = this._counter + 1;
+                    return true;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            return false;
+        }
+    }
     public static class Helper
     {
-        public static IEnumerable<T> MyWhere<T>(this IEnumerable<T> collectionIEnumerable, Func<T, bool> function)
+        public static IEnumerable<T> MyWhere<T>(this IEnumerable<T> collectionIEnumerable, Func<T, bool> predicate)
         {
-            IEnumerable<T> collection = new T[0];
-            if (collectionIEnumerable == null)
-            {
-                throw new ArgumentNullException(nameof(collectionIEnumerable));
-            }
-            else
-            {
-                IEnumerator<T> collectionIEnumerator = collectionIEnumerable.GetEnumerator();
-                while (collectionIEnumerator.MoveNext())
-                {
-                    T item = (T)collectionIEnumerator.Current;
-                    if (function(item) == true)
-                    {
-                        collection = collection.MyAdd(item);
-                        // yield return item;
-                    }
-                }
-                return (IEnumerable<T>)collection;
-            }
+            return new MyWhenHelper<T>(collectionIEnumerable, predicate);
         }
         public static IEnumerable<T> MyTake<T>(this IEnumerable<T> collectionIEnumerable, int length)
         {
-            IEnumerable<T> collection = new T[0];
-            if (collectionIEnumerable == null)
-            {
-                throw new ArgumentNullException(nameof(collectionIEnumerable));
-            }
-            else
-            {
-                IEnumerator<T> collectionIEnumerator = collectionIEnumerable.GetEnumerator();
-                int counter = 0;
-                while (collectionIEnumerator.MoveNext())
-                {
-                    T item = (T)collectionIEnumerator.Current;
-                    if (counter < length)
-                    {
-                        collection = collection.MyAdd(item);
-                        // yield return item;
-                        counter = counter + 1;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                return (IEnumerable<T>)collection;
-            }
-        }
-        public static int MyLength<T>(this IEnumerable<T> collectionIEnumerable)
-        {
-            if (collectionIEnumerable == null)
-            {
-                throw new ArgumentNullException(nameof(collectionIEnumerable));
-            }
-            else
-            {
-                IEnumerator<T> collectionIEnumerator = collectionIEnumerable.GetEnumerator();
-                int counter = 0;
-                while (collectionIEnumerator.MoveNext())
-                {
-                    counter = counter + 1;
-                }
-                return counter;
-            }
-        }
-        public static IEnumerable<T> MyAdd<T>(this IEnumerable<T> collectionIEnumerable, T value)
-        {
-            if (collectionIEnumerable == null)
-            {
-                throw new ArgumentNullException(nameof(collectionIEnumerable));
-            }
-            else
-            {
-                IEnumerator<T> collectionIEnumerator = collectionIEnumerable.GetEnumerator();
-                int length = collectionIEnumerable.MyLength<T>();
-                T[] collection = new T[length + 1];
-                int counter = 0;
-                while (collectionIEnumerator.MoveNext())
-                {
-                    T item = (T)collectionIEnumerator.Current;
-                    collection[counter] = item;
-                    counter = counter + 1;
-                }
-                collection[length] = value;
-                return (IEnumerable<T>)collection;
-            }
+            return new MyTakeHelper<T>(collectionIEnumerable, length);
         }
     }
 }
