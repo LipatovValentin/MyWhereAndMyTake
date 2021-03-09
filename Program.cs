@@ -13,7 +13,6 @@ namespace MyWhereAndMyTake
             {
                 Console.WriteLine(item);
             }
-            Console.ReadKey();
         }
         public static IEnumerable<int> GetEnumiration()
         {
@@ -24,39 +23,65 @@ namespace MyWhereAndMyTake
             }
         }
     }
-
     public class MyHelper<T> : IEnumerable<T>, IEnumerator<T>, IDisposable
     {
+        protected bool _disposed = false;
         protected IEnumerator<T> _items;
         public T Current
         {
             get
             {
-                return this._items.Current;
+                ThrowIfDisposed();
+                return _items.Current;
             }
         }
         object IEnumerator.Current
         {
             get
             {
-                return (object) this.Current;
+                return (object) Current;
             }
         }
         public MyHelper(IEnumerable<T> items)
         {
-            this._items = items.GetEnumerator();
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+            _items = items.GetEnumerator();
         }
         public virtual bool MoveNext()
         {
-            return this._items.MoveNext();
+            ThrowIfDisposed();
+            return _items.MoveNext();
         }
         public void Reset()
         {
-            this._items.Reset();
+            ThrowIfDisposed();
+            _items.Reset();
+        }
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed == true)
+            {
+                throw new ObjectDisposedException(nameof(_items));
+            }
         }
         public void Dispose()
         {
-            this._items.Dispose();
+            Dispose(true);
+        }
+        public void Dispose(bool disposing)
+        {
+            if (_disposed == true)
+            {
+                return;
+            }
+            if (disposing)
+            {
+                _items?.Dispose();
+            }
+            _disposed = true;
         }
         public MyHelper<T> GetEnumerator()
         {
@@ -71,19 +96,23 @@ namespace MyWhereAndMyTake
             return this;
         }
     }
-
     public class MyWhenHelper<T> : MyHelper<T>
     {
         private Func<T, bool> _predicate;
         public MyWhenHelper(IEnumerable<T> items, Func<T, bool> predicate) : base (items)
         {
-            this._predicate = predicate;
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
+            }
+            _predicate = predicate;
         }
         public override bool MoveNext()
         {
-            while (this._items.MoveNext())
+            ThrowIfDisposed();
+            while (_items.MoveNext())
             {
-                if (this._predicate(this.Current) == true)
+                if (_predicate(Current) == true)
                 {
                     return true;
                 }
@@ -101,15 +130,16 @@ namespace MyWhereAndMyTake
         private int _length;
         public MyTakeHelper(IEnumerable<T> items, int length) : base(items)
         {
-            this._length = length;
+            _length = length;
         }
         public override bool MoveNext()
         {
-            while (this._items.MoveNext())
+            ThrowIfDisposed();
+            while (_items.MoveNext())
             {
-                if (this._counter < this._length)
+                if (_counter < _length)
                 {
-                    this._counter = this._counter + 1;
+                    _counter = _counter + 1;
                     return true;
                 }
                 else
@@ -122,13 +152,25 @@ namespace MyWhereAndMyTake
     }
     public static class Helper
     {
-        public static IEnumerable<T> MyWhere<T>(this IEnumerable<T> collectionIEnumerable, Func<T, bool> predicate)
+        public static IEnumerable<T> MyWhere<T>(this IEnumerable<T> items, Func<T, bool> predicate)
         {
-            return new MyWhenHelper<T>(collectionIEnumerable, predicate);
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
+            }
+            return new MyWhenHelper<T>(items, predicate);
         }
-        public static IEnumerable<T> MyTake<T>(this IEnumerable<T> collectionIEnumerable, int length)
+        public static IEnumerable<T> MyTake<T>(this IEnumerable<T> items, int length)
         {
-            return new MyTakeHelper<T>(collectionIEnumerable, length);
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+            return new MyTakeHelper<T>(items, length);
         }
     }
 }
